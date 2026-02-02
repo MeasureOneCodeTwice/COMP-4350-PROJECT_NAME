@@ -4,11 +4,11 @@ import os
 
 app = FastAPI()
 
-@app.get('/api/test')
+@app.get('/health')
 def test_endpoint():
     return 'ok'
 
 if __name__ == "__main__":
     
-    port = int(os.getenv("PORT", 3004))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, port=port)
