@@ -9,7 +9,6 @@ The /api/test endpoint will try to reach every other stood up service and return
 
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { json } from 'stream/consumers';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,7 +25,7 @@ app.listen(PORT, () => {
 });
 
 //test endpoint
-app.get('/api/test', (req: express.Request, res: express.Response) => {
+app.get('/api/test', async (req: express.Request, res: express.Response) => {
     console.log('Received test request at API Gateway: ', req.url);
     let output: Dictionary = {};
 
@@ -37,7 +36,12 @@ app.get('/api/test', (req: express.Request, res: express.Response) => {
         // reach out to each microservice
         const service = services[i - 1];
         if (service) {
-            output[service] = `http://localhost:300${i}/api/test`;
+            try {
+                const response = await fetch(`http://localhost:300${i}/api/test`);
+                output[service] = await response.text();
+            } catch (error) {
+                output[service] = `error`;
+            }
         }
     }
     res.json(output);
