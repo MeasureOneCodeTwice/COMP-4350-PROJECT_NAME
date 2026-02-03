@@ -9,15 +9,25 @@ The /api/test endpoint will try to reach every other stood up service and return
 
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-const runningOnDocker = process.env.DOCKER_ENV === 'true';
+import cors from 'cors';
 
 interface Dictionary {
   [key: string]: string;
 }
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors({
+  origin: 'http://localhost:5173',  // vite dev server so that the client can access this API
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+const runningOnDocker = process.env.DOCKER_ENV === 'true';
+
+
 
 app.use(express.json());
 
