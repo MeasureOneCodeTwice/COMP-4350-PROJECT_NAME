@@ -7,19 +7,26 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
+      - DOCKER_ENV=true
     depends_on:
       - auth-s
       - user-s
+      - analytics-s
+      - market-s
   
   # auth service
   auth-s:
     build: ./auth-s
+    ports:
+      - "3001:3001"
     environment:
       - PORT=3001
   
   # user service
   user-s:
     build: ./user-s
+    ports:
+      - "3002:3002"
     environment:
       - PORT=3002
   
@@ -32,7 +39,7 @@ services:
         - PORT=3003
     
   # python market service
-  market-service:
+  market-s:
     build: ./market-s
     ports:
       - "3004:3004"

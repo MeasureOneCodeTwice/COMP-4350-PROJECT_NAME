@@ -13,6 +13,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const runningOnDocker = process.env.DOCKER_ENV === 'true';
 
 interface Dictionary {
   [key: string]: string;
@@ -21,8 +22,10 @@ interface Dictionary {
 app.use(express.json());
 
 app.listen(PORT, () => {
-  console.log(`API Gateway running on port ${PORT} at http://localhost:${PORT}`);
+  console.log(`API Gateway running on port ${PORT} at http://localhost:${PORT}, Running on Docker: ${runningOnDocker}`);
 });
+
+
 
 //test endpoint
 app.get('/api/test', async (req: express.Request, res: express.Response) => {
@@ -32,15 +35,25 @@ app.get('/api/test', async (req: express.Request, res: express.Response) => {
     output['api-gateway'] = `ok`;
     let services: string[] = ['analytics', 'user', 'authentication', 'market'];
 
+    if (runningOnDocker) {
+        services = [ 'auth-s', 'user-s', 'analytics-s', 'market-s'];
+    }
+
     for (let i = 1; i < 5; i++) {
         // reach out to each microservice
         const service = services[i - 1];
         if (service) {
             try {
-                const response = await fetch(`http://localhost:300${i}/api/test`);
-                output[service] = await response.text();
+                if (!runningOnDocker) {
+                    const response = await fetch(`http://localhost:300${i}/api/test`);
+                    output[service] = await response.text();
+                } else {
+                    const response = await fetch(`http://${service}:300${i}/api/test`);
+                    output[service] = await response.text();
+                }
             } catch (error) {
                 output[service] = `error`;
+                console.log(error);
             }
         }
     }

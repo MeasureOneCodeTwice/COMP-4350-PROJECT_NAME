@@ -6,7 +6,7 @@ import numpy as np
 import uvicorn
 import os
 
-app = FastAPI(title ="Analytics Service")
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,

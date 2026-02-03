@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 import uvicorn
 import os
 
-app = FastAPI(title="Market Service")
+app = FastAPI()
 
 @app.get('/api/test')
 def test_endpoint():
