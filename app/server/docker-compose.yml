@@ -1,7 +1,7 @@
 services:
 
   api-gateway:
-    build: ./api-gateway
+    build: ./services/api-gateway
     ports:
       - "3000:8000"
     env_file: 
@@ -15,22 +15,22 @@ services:
       - market
   
   auth:
-    build: ./auth
+    build: ./services/auth
     env_file: 
     - path: ./default.env
   
   user:
-    build: ./user
+    build: ./services/user
     env_file: 
     - path: ./default.env
   
   analytics:
-      build: ./analytics
+      build: ./services/analytics
       env_file: 
       - path: ./default.env
     
   market:
-    build: ./market
+    build: ./services/market
     env_file: 
     - path: ./default.env
 
@@ -39,6 +39,7 @@ services:
     image: mysql:8.0-debian
     volumes: 
     - db_data:/var/lib/mysql
+    - ./services/database:/docker-entrypoint-initdb.d
     secrets:
       - db_root_password
       - db_password
