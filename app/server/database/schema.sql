@@ -1,7 +1,7 @@
 CREATE DATABASE finus;
 
-CREATE TABLE finus.account (
-    id         INTEGER NOT NULL AUTO_INCREMENT,
+CREATE TABLE finus.finusAccount (
+    id         INTEGER      NOT NULL AUTO_INCREMENT,
     username   VARCHAR(100) NOT NULL,
     email      VARCHAR(100) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
@@ -12,9 +12,110 @@ CREATE TABLE finus.account (
 );
 
 CREATE TABLE finus.credentials (
-    account_id INTEGER     NOT NULL,
-    pw_hash    BLOB(256)   NOT NULL,
-    salt       CHAR(8)     NOT NULL,
-    PRIMARY KEY (account_id),
-    FOREIGN KEY (account_id) REFERENCES finus.account(id) ON DELETE CASCADE
+    finus_account_id INTEGER     NOT NULL AUTO_INCREMENT,
+    pw_hash          BLOB(256)   NOT NULL,
+    salt             CHAR(8)     NOT NULL,
+    PRIMARY KEY (finus_account_id),
+    FOREIGN KEY (finus_account_id) REFERENCES finus.finusAccount(id) ON DELETE CASCADE
 );
+
+CREATE TABLE finus.profile (
+    id          INTEGER      NOT NULL AUTO_INCREMENT,
+    name        VARCHAR(100) NOT NULL,
+    description VARCHAR(500),
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE finus.goalType (
+    type VARCHAR(50) NOT NULL,
+    PRIMARY KEY (type)
+);
+
+CREATE TABLE finus.goal (
+    id          INTEGER         NOT NULL AUTO_INCREMENT,
+    name        VARCHAR(50)     NOT NULL,
+    type        VARCHAR(50)     NOT NULL,
+    objective   VARCHAR(500)    NOT NULL,
+    description VARCHAR(500),
+    deadline    DATETIME, 
+    PRIMARY KEY (id),
+    FOREIGN KEY (type) REFERENCES finus.goalType(type) ON DELETE CASCADE
+
+);
+
+CREATE TABLE finus.profile_goal (
+    profile_id INTEGER NOT NULL,
+    goal_id    INTEGER NOT NULL,
+    PRIMARY KEY (profile_id, goal_id), 
+    FOREIGN KEY (profile_id) REFERENCES finus.profile(id),
+    FOREIGN KEY (goal_id)    REFERENCES finus.goal(id)
+);
+
+CREATE TABLE finus.financialAccountType (
+    type VARCHAR(50) NOT NULL,
+    PRIMARY KEY (type)
+);
+
+CREATE TABLE finus.financialAccountSubtype(
+    type VARCHAR(50) NOT NULL,
+    PRIMARY KEY (type)
+);
+
+CREATE TABLE finus.financialAccount (
+    id           INTEGER      NOT NULL,
+    name         VARCHAR(50)  NOT NULL,
+    type         VARCHAR(50)  NOT NULL,
+    balance      INTEGER      NOT NULL,
+    value        INTEGER      NOT NULL,
+    last_updated DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    subtype      VARCHAR(50), 
+    PRIMARY KEY (id),
+    FOREIGN KEY (type)    REFERENCES finus.financialAccountType(type) ON DELETE CASCADE,
+    FOREIGN KEY (subtype) REFERENCES finus.financialAccountType(type) ON DELETE CASCADE
+
+);
+
+CREATE TABLE finus.finusAccount_profile (
+    profile_id INTEGER NOT NULL,
+    account_id INTEGER NOT NULL,
+    PRIMARY KEY (profile_id, account_id),
+    FOREIGN KEY (profile_id) REFERENCES finus.profile(id), 
+    FOREIGN KEY (account_id) REFERENCES finus.financialAccount(id) ON DELETE CASCADE
+);
+
+CREATE TABLE finus.transaction (
+    id                  INTEGER       NOT NULL AUTO_INCREMENT,
+    financialAccount_id INTEGER       NOT NULL,
+    amount              INTEGER       NOT NULL,
+    description         VARCHAR(500),
+    sender              VARCHAR(50),
+    recipient           VARCHAR(50),
+    date                DATETIME, 
+    PRIMARY KEY (id),
+    FOREIGN KEY (financialAccount_id) REFERENCES finus.financialAccount(id) ON DELETE CASCADE
+);
+
+CREATE TABLE finus.asset (
+    id                  INTEGER NOT NULL AUTO_INCREMENT,
+    name                VARCHAR(50) NOT NULL,
+    fixed_compound_rate DOUBLE,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE finus.investment (
+    account_id   INTEGER     NOT NULL,
+    asset_id     INTEGER     NOT NULL,
+    name         VARCHAR(50) NOT NULL,
+    quantity     INTEGER     NOT NULL  DEFAULT 1,
+    cost         INTEGER     NOT NULL,
+    last_updated DATETIME              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (account_id, asset_id),
+    FOREIGN KEY (account_id) REFERENCES finus.financialAccount(id) ON DELETE CASCADE,
+    FOREIGN KEY (asset_id)   REFERENCES finus.asset(id)            ON DELETE CASCADE
+);
+
+
+#Populate lookup tables
+#INSERT INTO finus.financialAccountType    (type) VALUES ();
+#INSERT INTO finus.financialAccountSubtype (type) VALUES ();
+INSERT INTO finus.goalType                (type) VALUES ('money'), ('debt');
