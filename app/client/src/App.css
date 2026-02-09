@@ -1,5 +1,5 @@
 #root {
-  
+  min-height: calc(100vh);
 }
 
 .logo {

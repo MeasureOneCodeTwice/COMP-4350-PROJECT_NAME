@@ -22,17 +22,17 @@ function App() {
 
 function Main() {
   const location = useLocation()
-
+  const main = true
   return (
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           {/* <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} /> */}
           {/* Add a 404 page */}
-          <Route path="/" element={<Layout />}>
+          {main ? <Route path="/" element={<Layout />}>
             <Route index element={<DashboardPage />} />
-          </Route>
-          {/*<Route path="*" element={<NotFoundPage />} />*/}
+          </Route> :
+          <Route path="*" element={<NotFoundPage />} />}
         </Routes>
       </Suspense>
   )
