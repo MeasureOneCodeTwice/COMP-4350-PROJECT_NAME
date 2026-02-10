@@ -1,119 +1,143 @@
-import { stmts } from "./db";
+import express from 'express'
+import jwt from 'jsonwebtoken'
+import { closeDatabase, createUser, findUserByEmail, type DbUser } from './db'
+import { hashPassword, validateEmail, validatePassword, verifyPassword } from './credentialUtils'
 
-const PORT = process.env.PORT || 8000;
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "http://localhost:5173",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    },
-  });
+type SignupBody = {
+  name?: string
+  email?: string
+  password?: string
 }
 
-
-function badRequest(message: string) {
-  return json({ ok: false, error: message }, 400);
+type LoginBody = {
+  email?: string
+  password?: string
 }
 
+type AuthTokenClaims = {
+  sub: string
+  email: string
+  name: string
+}
 
-function getOptions() {
+const PORT = Number(process.env.PORT ?? 8000)
+const JWT_SECRET = process.env.AUTH_JWT_SECRET ?? 'dev-only-secret'
+
+const app = express()
+app.use(express.json())
+
+function authResponseUser(user: DbUser) {
   return {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost.*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-      },
-    }
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  }
 }
 
-// ---- server ----
-Bun.serve({
-  port: PORT,
-  async fetch(req) {
-    const url = new URL(req.url);
+function issueToken(user: DbUser): string {
+  const payload: AuthTokenClaims = {
+    sub: String(user.id),
+    email: user.email,
+    name: user.name,
+  }
 
-    if (req.method === "OPTIONS") {
-      return new Response(null, getOptions())
-    };
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
+}
 
-    if(url.pathname === '/api/auth/token' && req.method === "POST") {
-      let body;
-      try {
-        body = await req.json();
-        if(!body.email || !body.password) { throw new Error() }
-      } catch { 
-        return badRequest("Body must be JSON containing username and password.");
-      }
+app.post('/api/auth/signup', async (req, res) => {
+  const body = req.body as SignupBody
+  const name = body.name?.trim()
+  const email = body.email?.trim().toLowerCase()
+  const password = body.password ?? ''
 
-      if(!validateEmail(body.email)) {
-        return 
-      }
-      if(!validatePassword(body.password)) {
+  if (!name || !email || !password) {
+    res.status(400).json({ ok: false, error: 'Name, email and password are required.' })
+    return
+  }
 
-      }
+  if (!validateEmail(email)) {
+    res.status(400).json({ ok: false, error: 'Please enter a valid email address.' })
+    return
+  }
 
+  if (!validatePassword(password)) {
+    res.status(400).json({
+      ok: false,
+      error: 'Password must be at least 8 characters and include letters and numbers.',
+    })
+    return
+  }
 
+  const existingUser = await findUserByEmail(email)
+  if (existingUser) {
+    res.status(409).json({ ok: false, error: 'An account with this email already exists.' })
+    return
+  }
 
-    }
+  const passwordHash = await hashPassword(password)
+  const user = await createUser(name, email, passwordHash)
+  const token = issueToken(user)
 
-    // ---- SIGNUP ----
-    if (req.method === "POST" && url.pathname === "/api/auth/signup") {
-    
-      const email = body.email.trim().toLowerCase();
-      const password = body.password;
+  res.status(201).json({
+    ok: true,
+    message: 'Account created.',
+    token,
+    user: authResponseUser(user),
+  })
+})
 
-      if (!isValidEmail(email)) return badRequest("Please enter a valid email address.");
-      if (password.length < 8) return badRequest("Password must be at least 8 characters.");
+app.post('/api/auth/login', async (req, res) => {
+  const body = req.body as LoginBody
+  const email = body.email?.trim().toLowerCase()
+  const password = body.password ?? ''
 
-      const existing = stmts.findByEmail.get(email) as any;
-      if (existing) return json({ ok: false, error: "Email already exists." }, 409);
+  if (!email || !password) {
+    res.status(400).json({ ok: false, error: 'Email and password are required.' })
+    return
+  }
 
-      const passwordHash = await hashPassword(password);
-      stmts.createUser.run(email, passwordHash);
+  if (!validateEmail(email)) {
+    res.status(400).json({ ok: false, error: 'Please enter a valid email address.' })
+    return
+  }
 
-      return json({ ok: true, message: "Account created." }, 201);
-    }
+  const user = await findUserByEmail(email)
+  if (!user) {
+    res.status(401).json({ ok: false, error: 'Invalid email or password.' })
+    return
+  }
 
-    // ---- LOGIN ----
-    if (req.method === "POST" && url.pathname === "/api/auth/login") {
-      const body = (await req.json().catch(() => null)) as null | {
-        email?: string;
-        password?: string;
-      };
+  const isValidPassword = await verifyPassword(password, user.password_hash)
+  if (!isValidPassword) {
+    res.status(401).json({ ok: false, error: 'Invalid email or password.' })
+    return
+  }
 
-      if (!body?.email || !body?.password) {
-        return badRequest("Email and password are required.");
-      }
+  const token = issueToken(user)
 
-      const email = body.email.trim().toLowerCase();
-      const password = body.password;
+  res.status(200).json({
+    ok: true,
+    message: 'Logged in.',
+    token,
+    user: authResponseUser(user),
+  })
+})
 
-      if (!isValidEmail(email)) return badRequest("Please enter a valid email address.");
+app.get('/health', (_req, res) => {
+  res.send('ok')
+})
 
-      const user = stmts.findByEmail.get(email) as any;
-      if (!user) return json({ ok: false, error: "Invalid email or password." }, 401);
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, status: 'up' })
+})
 
-      const valid = await verifyPassword(password, user.password_hash);
-      if (!valid) return json({ ok: false, error: "Invalid email or password." }, 401);
+const server = app.listen(PORT, () => {
+  console.log(`Auth Service running on port ${PORT}`)
+})
 
-      return json({
-        ok: true,
-        message: "Logged in!",
-        user: { id: user.id, email: user.email },
-      });
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/health") {
-      return json({ ok: true, status: "up" });
-    }
-
-    return json({ ok: false, error: "Not found" }, 404);
-  },
-});
-
-console.log(`Auth service running on ${PORT}`);
+process.on('SIGTERM', () => {
+  server.close()
+  closeDatabase().catch((error: unknown) => {
+    console.error('Failed to close DB pool:', error)
+  })
+})

@@ -1,4 +1,14 @@
-CREATE DATABASE finus;
+CREATE DATABASE IF NOT EXISTS finus;
+
+CREATE TABLE finus.auth_user (
+    id            INTEGER      NOT NULL AUTO_INCREMENT,
+    name          VARCHAR(100) NOT NULL,
+    email         VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_auth_user_email (email)
+);
 
 CREATE TABLE finus.finusAccount (
     id         INTEGER      NOT NULL AUTO_INCREMENT,

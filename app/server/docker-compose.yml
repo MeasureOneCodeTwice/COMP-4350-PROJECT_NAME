@@ -18,6 +18,14 @@ services:
     build: ./services/auth
     env_file: 
     - path: ./default.env
+    environment:
+      - DB_HOST=database
+      - DB_PORT=3306
+      - DB_NAME=finus
+      - DB_USER=finus_app
+      - DB_PASSWORD=password
+    depends_on:
+      - database
   
   user:
     build: ./services/user
@@ -39,13 +47,15 @@ services:
     image: mysql:8.0-debian
     volumes: 
     - db_data:/var/lib/mysql
-    - ./services/database:/docker-entrypoint-initdb.d
+    - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     secrets:
       - db_root_password
       - db_password
     environment:
-      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
-      - MYSQL_PASSWORD_FILE=/run/secrets/db_password
+      - MYSQL_DATABASE=finus
+      - MYSQL_USER=finus_app
+      - MYSQL_ROOT_PASSWORD=a
+      - MYSQL_PASSWORD=password
     ports:
       - "3306:3306"
 
