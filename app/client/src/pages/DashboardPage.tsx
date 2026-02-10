@@ -1,9 +1,9 @@
 import React from 'react'
 import type { Transaction } from '@/types/Transaction'
-import { Chart, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend  } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import { Chart,  PointElement, LineElement,ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend  } from 'chart.js';
+import { Pie, Line } from 'react-chartjs-2';
 import AccountCard from '@/components/AccountCard';
-Chart.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+Chart.register(PointElement, LineElement, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 function DashboardPage() {
    const data = {
     labels: [
@@ -23,18 +23,18 @@ function DashboardPage() {
       circumference: 360,
     }]
   };
-  const options: any = {
+  const options = {
     responsive: true,
     plugins: {
       legend: {
-        position: 'right',
+        position: 'right' as const,
       },
       title: {
         display: true,
         text: 'Expenses Breakdown',
         font: {
           size: 24,
-          weight: 'bold'
+          weight: 'bold' as const
         }
       },
       layout: {
@@ -49,6 +49,43 @@ function DashboardPage() {
   };
 
 
+  const linearOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Income vs Expenses',
+        font: {
+          size: 24,
+          weight: 'bold' as const
+        }
+      },
+    },
+  };
+
+  const labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
+
+  const linearData = {
+    labels,
+    datasets: [
+      {
+        label: 'Income',
+        data: ["2374823", "83932", "8294","102190"],
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+      },
+      {
+        label: 'Expenses',
+        data: ["2374", "9938", "122","8723"],
+        borderColor: 'rgb(53, 162, 235)',
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+      },
+    ],
+  };
+
   return (
     <section className="p-10 bg-gray-100">
       <h1 className="text-4xl font-bold mb-4">Welcome Username</h1>
@@ -62,7 +99,7 @@ function DashboardPage() {
       </section>
       <section className="flex flex-row items-center justify-center gap-12 my-10">
         <div className="flex-2 bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Income vs Expenses</h2>
+          <Line options={linearOptions} data={linearData} />
         </div>
         <div className="flex-1 bg-white p-6 rounded-lg shadow-md">
           <Pie data={data} options={options} />
