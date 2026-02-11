@@ -3,6 +3,7 @@ import type { Transaction } from '@/types/Transaction'
 import { Chart,  PointElement, LineElement,ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend  } from 'chart.js';
 import { Pie, Line } from 'react-chartjs-2';
 import AccountCard from '@/components/AccountCard';
+import TransactionTable from '@/components/TransactionTable';
 Chart.register(PointElement, LineElement, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 function DashboardPage() {
    const data = {
@@ -106,6 +107,7 @@ function DashboardPage() {
         </div>
       </section>
       <h2 className="text-2xl font-bold mb-4">Recent Transactions</h2>
+      <TransactionTable />
     </section>
   )
 }
