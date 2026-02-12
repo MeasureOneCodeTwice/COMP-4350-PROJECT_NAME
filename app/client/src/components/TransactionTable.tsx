@@ -95,29 +95,65 @@ const transactions: Transaction[] = [
 ];
 function TransactionTable() {
   return (
-    <div className="grid grid-cols-6 gap-4 my-8">
-      <React.Fragment>
-        <div className="font-bold">Date</div>
-        <div className="font-bold">Description</div>
-        <div className="font-bold">Category</div>
-        <div className="font-bold">Amount</div>
-        <div className="font-bold">From</div>
-        <div className="font-bold">To</div>
-      </React.Fragment>
-      {transactions.map((tx) => (
-        <React.Fragment key={tx.id}>
-          <div>{new Date(tx.date).toLocaleDateString()}</div>
-          <div>{tx.description || "N/A"}</div>
-          <div>{tx.category}</div>
-          <div className={tx.amount < 0 ? "text-red-500" : "text-green-500"}>
-            {tx.amount < 0 ? `-$${Math.abs(tx.amount).toFixed(2)}` : `$${tx.amount.toFixed(2)}`}
-          </div>
-          <div>{tx.from}</div>
-          <div>{tx.to}</div>
-        </React.Fragment>
-      ))}
-    </div>
+    <Grid />
   )
 }
+function Grid() {
+  return (
+    <div className="my-10 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      {/* Header */}
+      <div className="grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr] bg-gray-50 px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wide border-b gap-x-2">
+        <div>Date</div>
+        <div>Description</div>
+        <div>Category</div>
+        <div>Amount</div>
+        <div>From</div>
+        <div>To</div>
+      </div>
 
+      {/* Body */}
+      <div className="divide-y divide-gray-100">
+        {transactions.map((tx, index) => (
+          <div
+            key={tx.id}
+            className={`grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr] px-6 py-4 items-center text-sm transition duration-150 
+            ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+            hover:bg-blue-50 gap-x-2`}
+          >
+            <div className="text-gray-500">
+              {new Date(tx.date).toLocaleDateString()}
+            </div>
+
+            <div className="font-medium text-gray-800">
+              {tx.description || "N/A"}
+            </div>
+
+            <div className="text-gray-600">
+              {tx.category}
+            </div>
+
+            <div
+              className={`font-semibold ${
+                tx.amount < 0 ? "text-red-500" : "text-green-600"
+              }`}
+            >
+              {tx.amount < 0
+                ? `-$${Math.abs(tx.amount).toFixed(2)}`
+                : `$${tx.amount.toFixed(2)}`}
+            </div>
+
+            <div className="text-gray-600 truncate">
+              {tx.from}
+            </div>
+
+            <div className="text-gray-600 truncate">
+              {tx.to}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  )
+}
 export default TransactionTable
