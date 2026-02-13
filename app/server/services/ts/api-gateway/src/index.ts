@@ -34,6 +34,8 @@ onExit(() => server.close());
        result[serviceName] = await fetch(`${process.env[service]}/health`)
          .then((res) => res.text())
          .catch((err) => err.message);
+       console.log("received response");
      }
+     
      res.json(result);
   });
